@@ -156,7 +156,7 @@ func (r *ReconcileZuul) Reconcile(request reconcile.Request) (reconcile.Result, 
 		if err = createK8sObject(instance, configMap, r); err != nil {
 			return reconcile.Result{}, err
 		}
-		return requeAfter(1, nil)
+		return requeAfter(5, nil)
 	}
 
 	existingZuulScheduler, zuulscheduler := tool.ZuulScheduler.GetDeployment()
@@ -173,6 +173,26 @@ func (r *ReconcileZuul) Reconcile(request reconcile.Request) (reconcile.Result, 
 		// Updation
 	*/
 
+	// Gerrit info Update, it should put first because it has delete action !!!
+	gerrit_server := instance.Spec.Gerrit.Server
+	gerrit_port := instance.Spec.Gerrit.Port
+
+	env := existingZuulScheduler.Spec.Template.Spec.Containers[0].Env
+	env_map := generateEnvMap(env)
+
+	// If update gerrit message, we need recreate configmap and deployment
+	if ( env_map["gerrit_server"] != gerrit_server || env_map["gerrit_port"] != gerrit_port ) {
+		reqLogger.Info("Begin Delete ZuulScheduler Configmap")
+		if err = r.client.Delete(context.TODO(), existingZuulSchedulerConfigMap); err != nil {
+			return reconcile.Result{}, err
+		}
+		reqLogger.Info("Begin Delete ZuulScheduler Deployment")
+		if err = r.client.Delete(context.TODO(), existingZuulScheduler); err != nil {
+			return reconcile.Result{}, err
+		}
+		return requeAfter(5, nil)
+	}
+
 	// ZuulScheduler Deployment Size Update
 	size := instance.Spec.ZuulScheduler.Size
 	if *existingZuulScheduler.Spec.Replicas != size {
@@ -183,6 +203,7 @@ func (r *ReconcileZuul) Reconcile(request reconcile.Request) (reconcile.Result, 
 		return reconcile.Result{Requeue: true}, nil
 	}
 
+	// Zuul Version update
 	version := instance.Spec.ZuulVersion
 	actual_zc_image_prefix, actual_zc_image_version := generateImageDetail(existingZuulScheduler)
 
@@ -197,6 +218,15 @@ func (r *ReconcileZuul) Reconcile(request reconcile.Request) (reconcile.Result, 
 	}
 
 	return reconcile.Result{}, nil
+}
+
+func generateEnvMap(env []corev1.EnvVar) (map[string]string) {
+	dict := make(map[string]string)
+
+	for _, v := range env {
+		dict[strings.ToLower(v.Name)] = v.Value
+	}
+	return dict
 }
 
 func generateImageDetail(obj metav1.Object) (string, string) {
