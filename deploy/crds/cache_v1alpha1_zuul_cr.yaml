@@ -1,0 +1,12 @@
+apiVersion: cache.example.com/v1alpha1
+kind: Zuul
+metadata:
+  name: zuul
+spec:
+  zuulversion: "3.2.0"
+  zuulscheduler-spec:
+    size: 1
+  gerrit-spec:
+    server: "172.16.100.165"
+    port: "29418"
+    user: "esadmin"
