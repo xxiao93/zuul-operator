@@ -75,7 +75,7 @@ var mainyamlTemplate = `
 		- easystack/django-openstack-auth
 `
 
-var zuulconfigTemplate = `
+var zuulschedulerconfigTemplate = `
 [gearman]
 server=127.0.0.1
 port=4730
@@ -95,4 +95,55 @@ baseurl=http://{{ .GerritServer }}:8080
 user={{ .GerritUser }}
 sshkey=/home/zuul/.ssh/id_rsa
 keepalive=5
+`
+
+var zuulexecutorconfigTemplate = `
+[executor]
+user=zuul
+finger_port=7900
+pidfile=/var/lib/zuul/run/zuul-executor.pid
+trusted_ro_paths=/home/zuul/.ssh/id_rsa:/home/zuul/.ssh/id_rsa.pub:/home/zuul/.ssh/known_hosts:/home/zuul/pip.conf:/var/lib/zuul/run/zuul-scheduler.pid
+trusted_rw_paths=/var/lib/zuul/tenant-config/
+variables=/var/lib/zuul/site-variables.yaml
+disk_limit_per_job=4096
+[gearman]
+server=gearman
+port=4730
+[connection gerrit]
+driver=gerrit
+server={{ .GerritServer }}
+baseurl=http://{{ .GerritServer }}:8080
+user={{ .GerritUser }}
+sshkey=/home/zuul/.ssh/id_rsa
+keepalive=5
+`
+
+var zuulmergerconfigTemplate = `
+[merger]
+git_dir=/var/lib/zuul/git
+git_user_email=zuul@gerrit.com
+git_user_name=esadmin
+pidfile=/var/lib/zuul/run/zuul-merger.pid
+[gearman]
+server=gearman
+port=4730
+[connection gerrit]
+driver=gerrit
+server={{ .GerritServer }}
+baseurl=http://{{ .GerritServer }}:8080
+user={{ .GerritUser }}
+sshkey=/home/zuul/.ssh/id_rsa
+keepalive=5
+`
+
+var zuulwebconfigTemplate = `
+[web]
+listen_address=0.0.0.0
+pidfile=/var/lib/zuul/run/zuul-web.pid
+port=9001
+status_url=http://zuul-web:9001/status
+static_path=/zuul/zuul/web/static
+[gearman]
+server=gearman
+port=4730
 `

@@ -39,12 +39,12 @@ type ZuulScheduler struct {
 }
 
 // GetConfigMap returns ZuulScheduler ConfigMap
-func (z *ZuulScheduler) GetConfigMap() (*corev1.ConfigMap, *corev1.ConfigMap) {
-	return &corev1.ConfigMap{}, zuul.CreateConfigMap(z.cr)
+func (z *ZuulScheduler) GetZuulSchedulerConfigMap() (*corev1.ConfigMap, *corev1.ConfigMap) {
+	return &corev1.ConfigMap{}, zuul.CreateZuulSchedulerConfigMap(z.cr)
 }
 
 // GetDeployment returns ZuulScheduler Deployment
-func (z *ZuulScheduler) GetDeployment() (*appsv1.Deployment, *appsv1.Deployment) {
+func (z *ZuulScheduler) GetZuulSchedulerDeployment() (*appsv1.Deployment, *appsv1.Deployment) {
 	return &appsv1.Deployment{}, zuul.CreateZuulSchedulerDeployment(z.cr, z.serviceAccount)
 }
 

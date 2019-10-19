@@ -149,7 +149,7 @@ func (r *ReconcileZuul) Reconcile(request reconcile.Request) (reconcile.Result, 
 		return requeAfter(1, nil)
 	}
 
-	existingZuulSchedulerConfigMap, configMap := tool.ZuulScheduler.GetConfigMap()
+	existingZuulSchedulerConfigMap, configMap := tool.ZuulScheduler.GetZuulSchedulerConfigMap()
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: configMap.Name, Namespace: configMap.Namespace}, existingZuulSchedulerConfigMap)
 	if err != nil && errors.IsNotFound(err) {
 		reqLogger.Info("Creating ZuulScheduler Config Map")
@@ -159,7 +159,7 @@ func (r *ReconcileZuul) Reconcile(request reconcile.Request) (reconcile.Result, 
 		return requeAfter(5, nil)
 	}
 
-	existingZuulScheduler, zuulscheduler := tool.ZuulScheduler.GetDeployment()
+	existingZuulScheduler, zuulscheduler := tool.ZuulScheduler.GetZuulSchedulerDeployment()
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: zuulscheduler.Name, Namespace: zuulscheduler.Namespace}, existingZuulScheduler)
 	if err != nil && errors.IsNotFound(err) {
 		reqLogger.Info("Creating ZuulScheduler")
