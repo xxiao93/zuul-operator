@@ -13,10 +13,14 @@ import (
 type Tools struct {
 	cr            *cachev1alpha1.Zuul
 	ZuulScheduler ZuulScheduler
+	ZuulExecutor  ZuulExecutor
 }
 
 func (t *Tools) init() {
 	t.ZuulScheduler = ZuulScheduler{
+		cr: t.cr,
+	}
+	t.ZuulExecutor = ZuulExecutor{
 		cr: t.cr,
 	}
 }
@@ -29,6 +33,7 @@ func (t *Tools) SetupAccountsAndBindings() (*corev1.Namespace, *corev1.ServiceAc
 	roleBinding := t.createRoleBinding(clusterRole, svcAccount)
 
 	t.ZuulScheduler.serviceAccount = svcAccount
+	t.ZuulExecutor.serviceAccount = svcAccount
 	return namespace, svcAccount, clusterRole, roleBinding
 }
 
@@ -38,14 +43,30 @@ type ZuulScheduler struct {
 	serviceAccount *corev1.ServiceAccount
 }
 
-// GetConfigMap returns ZuulScheduler ConfigMap
+// ZuulExecutor structure
+type ZuulExecutor struct {
+	cr             *cachev1alpha1.Zuul
+	serviceAccount *corev1.ServiceAccount
+}
+
+// GetZuulSchedulerConfigMap returns ZuulScheduler ConfigMap
 func (z *ZuulScheduler) GetZuulSchedulerConfigMap() (*corev1.ConfigMap, *corev1.ConfigMap) {
 	return &corev1.ConfigMap{}, zuul.CreateZuulSchedulerConfigMap(z.cr)
 }
 
-// GetDeployment returns ZuulScheduler Deployment
+// GetZuulSchedulerDeployment returns ZuulScheduler Deployment
 func (z *ZuulScheduler) GetZuulSchedulerDeployment() (*appsv1.Deployment, *appsv1.Deployment) {
 	return &appsv1.Deployment{}, zuul.CreateZuulSchedulerDeployment(z.cr, z.serviceAccount)
+}
+
+// GetZuulExecutorConfigMap returns ZuulExecutor ConfigMap
+func (z *ZuulExecutor) GetZuulExecutorConfigMap() (*corev1.ConfigMap, *corev1.ConfigMap) {
+	return &corev1.ConfigMap{}, zuul.CreateZuulExecutorConfigMap(z.cr)
+}
+
+// GetZuulExecutorDeployment returns ZuulExecutor Deployment
+func (z *ZuulExecutor) GetZuulExecutorDeployment() (*appsv1.Deployment, *appsv1.Deployment) {
+	return &appsv1.Deployment{}, zuul.CreateZuulExecutorDeployment(z.cr, z.serviceAccount)
 }
 
 /* -------------------------------

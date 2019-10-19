@@ -8,18 +8,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func generatezuulshedulerVolumeMounts() []corev1.VolumeMount {
+func generatezuulexecutorVolumeMounts() []corev1.VolumeMount {
 	return []corev1.VolumeMount{
 		{
-			Name:      "zuul-scheduler-config",
+			Name:      "zuul-executor-config",
 			MountPath: "/etc/zuul/zuul.conf",
 			SubPath: "zuul.conf",
-			ReadOnly: utils.READONLY,
-		},
-		{
-			Name:      "zuul-scheduler-config",
-			MountPath: "/var/lib/zuul/tenant-config/main.yaml",
-			SubPath: "main.yaml",
 			ReadOnly: utils.READONLY,
 		},
 		{
@@ -29,14 +23,14 @@ func generatezuulshedulerVolumeMounts() []corev1.VolumeMount {
 	}
 }
 
-func generatezuulschedulerVolumes() []corev1.Volume {
+func generatezuulexecutorVolumes() []corev1.Volume {
 	return []corev1.Volume{
 		{
-			Name: "zuul-scheduler-config",
+			Name: "zuul-executor-config",
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: "zuul-scheduler-config",
+						Name: "zuul-executor-config",
 					},
 				},
 			},
@@ -52,15 +46,15 @@ func generatezuulschedulerVolumes() []corev1.Volume {
 	}
 }
 
-//CreateZuulSchedulerDeploymnet create zuulscheduler deployment
-func CreateZuulSchedulerDeployment(cr *cachev1alpha1.Zuul, serviceAccount *corev1.ServiceAccount) *appsv1.Deployment{
+//CreateZuulExecutorDeploymnet create zuulexecutor deployment
+func CreateZuulExecutorDeployment(cr *cachev1alpha1.Zuul, serviceAccount *corev1.ServiceAccount) *appsv1.Deployment{
 	labels := map[string]string{
-		"k8s-app": "zuul-scheduler",
+		"k8s-app": "zuul-executor",
 	}
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "zuul-scheduler",
+			Name:      "zuul-executor",
 			Namespace: cr.ObjectMeta.Namespace,
 			Labels:    labels,
 		},
@@ -78,21 +72,15 @@ func CreateZuulSchedulerDeployment(cr *cachev1alpha1.Zuul, serviceAccount *corev
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						corev1.Container{
-							Name:            "zuul-scheduler",
-							Image:           "hub.easystack.io/devops/ubuntu-source-zuul-scheduler:" + cr.Spec.ZuulVersion,
+							Name:            "zuul-executor",
+							Image:           "hub.easystack.io/devops/ubuntu-source-zuul-executor:" + cr.Spec.ZuulVersion,
 							ImagePullPolicy: "IfNotPresent",
-							Ports: []corev1.ContainerPort{
-								corev1.ContainerPort{
-									Name: "scheduler-port",
-									ContainerPort: 2020,
-								},
-							},
 							Command: []string{"sleep", "1d"},
 							Env:          utils.GenerateEnvironmentVariables(cr),
-							VolumeMounts: generatezuulshedulerVolumeMounts(),
+							VolumeMounts: generatezuulexecutorVolumeMounts(),
 						},
 					},
-					Volumes:            generatezuulschedulerVolumes(),
+					Volumes:            generatezuulexecutorVolumes(),
 					ServiceAccountName: serviceAccount.Name,
 				},
 			},
@@ -101,15 +89,14 @@ func CreateZuulSchedulerDeployment(cr *cachev1alpha1.Zuul, serviceAccount *corev
 }
 
 // CreateConfigMap - generate config map
-func CreateZuulSchedulerConfigMap(cr *cachev1alpha1.Zuul) *corev1.ConfigMap {
+func CreateZuulExecutorConfigMap(cr *cachev1alpha1.Zuul) *corev1.ConfigMap {
 
 	templateInput := utils.TemplateInput{
 		GerritServer:    cr.Spec.Gerrit.Server,
 		GerritUser:      cr.Spec.Gerrit.User,
 	}
 
-	zuulconfig, _ := utils.GenerateConfig(templateInput, zuulschedulerconfigTemplate)
-	mainyamlconfig, _ := utils.GenerateConfig(templateInput, mainyamlTemplate)
+	zuulconfig, _ := utils.GenerateConfig(templateInput, zuulexecutorconfigTemplate)
 
 	return &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
@@ -118,15 +105,14 @@ func CreateZuulSchedulerConfigMap(cr *cachev1alpha1.Zuul) *corev1.ConfigMap {
 		},
 
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "zuul-scheduler-config",
+			Name: "zuul-executor-config",
 			Labels: map[string]string{
-				"k8s-app": "zuul-scheduler",
+				"k8s-app": "zuul-executor",
 			},
 			Namespace: cr.ObjectMeta.Namespace,
 		},
 
 		Data: map[string]string{
-			"main.yaml": *mainyamlconfig,
 			"zuul.conf": *zuulconfig,
 		},
 	}

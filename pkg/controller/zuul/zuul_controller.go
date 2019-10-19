@@ -149,11 +149,11 @@ func (r *ReconcileZuul) Reconcile(request reconcile.Request) (reconcile.Result, 
 		return requeAfter(1, nil)
 	}
 
-	existingZuulSchedulerConfigMap, configMap := tool.ZuulScheduler.GetZuulSchedulerConfigMap()
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: configMap.Name, Namespace: configMap.Namespace}, existingZuulSchedulerConfigMap)
+	existingZuulSchedulerConfigMap, zuulschedulerconfigMap := tool.ZuulScheduler.GetZuulSchedulerConfigMap()
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: zuulschedulerconfigMap.Name, Namespace: zuulschedulerconfigMap.Namespace}, existingZuulSchedulerConfigMap)
 	if err != nil && errors.IsNotFound(err) {
-		reqLogger.Info("Creating ZuulScheduler Config Map")
-		if err = createK8sObject(instance, configMap, r); err != nil {
+		reqLogger.Info("Creating ZuulScheduler ConfigMap")
+		if err = createK8sObject(instance, zuulschedulerconfigMap, r); err != nil {
 			return reconcile.Result{}, err
 		}
 		return requeAfter(5, nil)
@@ -164,6 +164,26 @@ func (r *ReconcileZuul) Reconcile(request reconcile.Request) (reconcile.Result, 
 	if err != nil && errors.IsNotFound(err) {
 		reqLogger.Info("Creating ZuulScheduler")
 		if err = createK8sObject(instance, zuulscheduler, r); err != nil {
+			return reconcile.Result{}, err
+		}
+		return requeAfter(5, nil)
+	}
+
+	existingZuulExecutorConfigMap, zuulexecutorconfigMap := tool.ZuulExecutor.GetZuulExecutorConfigMap()
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: zuulexecutorconfigMap.Name, Namespace: zuulexecutorconfigMap.Namespace}, existingZuulExecutorConfigMap)
+	if err != nil && errors.IsNotFound(err) {
+		reqLogger.Info("Creating ZuulExecutor ConfigMap")
+		if err = createK8sObject(instance, zuulexecutorconfigMap, r); err != nil {
+			return reconcile.Result{}, err
+		}
+		return requeAfter(5, nil)
+	}
+
+	existingZuulExecutor, zuulexecutor := tool.ZuulExecutor.GetZuulExecutorDeployment()
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: zuulexecutor.Name, Namespace: zuulexecutor.Namespace}, existingZuulExecutor)
+	if err != nil && errors.IsNotFound(err) {
+		reqLogger.Info("Creating ZuulExecutor")
+		if err = createK8sObject(instance, zuulexecutor, r); err != nil {
 			return reconcile.Result{}, err
 		}
 		return requeAfter(5, nil)

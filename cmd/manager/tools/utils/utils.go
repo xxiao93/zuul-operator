@@ -8,7 +8,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-var ro = true
+var READONLY = true
 
 // Setup Zuul Env
 func GenerateEnvironmentVariables(cr *cachev1alpha1.Zuul) []corev1.EnvVar {
