@@ -149,44 +149,45 @@ func (r *ReconcileZuul) Reconcile(request reconcile.Request) (reconcile.Result, 
 		return requeAfter(1, nil)
 	}
 
+	// Create Zuul
 	existingZuulSchedulerConfigMap, zuulschedulerconfigMap := tool.ZuulScheduler.GetZuulSchedulerConfigMap()
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: zuulschedulerconfigMap.Name, Namespace: zuulschedulerconfigMap.Namespace}, existingZuulSchedulerConfigMap)
-	if err != nil && errors.IsNotFound(err) {
-		reqLogger.Info("Creating ZuulScheduler ConfigMap")
-		if err = createK8sObject(instance, zuulschedulerconfigMap, r); err != nil {
-			return reconcile.Result{}, err
-		}
-		return requeAfter(5, nil)
-	}
-
 	existingZuulScheduler, zuulscheduler := tool.ZuulScheduler.GetZuulSchedulerDeployment()
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: zuulscheduler.Name, Namespace: zuulscheduler.Namespace}, existingZuulScheduler)
-	if err != nil && errors.IsNotFound(err) {
-		reqLogger.Info("Creating ZuulScheduler")
-		if err = createK8sObject(instance, zuulscheduler, r); err != nil {
-			return reconcile.Result{}, err
-		}
-		return requeAfter(5, nil)
-	}
 
 	existingZuulExecutorConfigMap, zuulexecutorconfigMap := tool.ZuulExecutor.GetZuulExecutorConfigMap()
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: zuulexecutorconfigMap.Name, Namespace: zuulexecutorconfigMap.Namespace}, existingZuulExecutorConfigMap)
-	if err != nil && errors.IsNotFound(err) {
-		reqLogger.Info("Creating ZuulExecutor ConfigMap")
-		if err = createK8sObject(instance, zuulexecutorconfigMap, r); err != nil {
-			return reconcile.Result{}, err
+	existingZuulExecutor, zuulexecutor := tool.ZuulExecutor.GetZuulExecutorDeployment()
+
+	existingZuulMergerConfigMap, zuulmergerconfigMap := tool.ZuulMerger.GetZuulMergerConfigMap()
+	existingZuulMerger, zuulmerger := tool.ZuulMerger.GetZuulMergerDeployment()
+
+	existingZuulWebConfigMap, zuulwebconfigMap := tool.ZuulWeb.GetZuulWebConfigMap()
+	existingZuulWeb, zuulweb := tool.ZuulWeb.GetZuulWebDeployment()
+
+	existingzuulcomponentsconfig := []*corev1.ConfigMap{existingZuulSchedulerConfigMap, existingZuulExecutorConfigMap, existingZuulMergerConfigMap, existingZuulWebConfigMap}
+	existingzuulcomponents := []*appsv1.Deployment{existingZuulScheduler, existingZuulExecutor, existingZuulMerger, existingZuulWeb}
+
+	zuulcomponentsconfig := []*corev1.ConfigMap{zuulschedulerconfigMap, zuulexecutorconfigMap, zuulmergerconfigMap, zuulwebconfigMap}
+	zuulcomponents := []*appsv1.Deployment{zuulscheduler, zuulexecutor, zuulmerger, zuulweb}
+
+	for i, v := range existingzuulcomponentsconfig {
+		err = r.client.Get(context.TODO(), types.NamespacedName{Name: zuulcomponentsconfig[i].Name, Namespace: zuulcomponentsconfig[i].Namespace}, v)
+		if err != nil && errors.IsNotFound(err) {
+			reqLogger.Info("Creating ConfigMap: " + zuulcomponentsconfig[i].Name)
+			if err = createK8sObject(instance, zuulcomponentsconfig[i], r); err != nil {
+				return reconcile.Result{}, err
+			}
+			return requeAfter(5, nil)
 		}
-		return requeAfter(5, nil)
 	}
 
-	existingZuulExecutor, zuulexecutor := tool.ZuulExecutor.GetZuulExecutorDeployment()
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: zuulexecutor.Name, Namespace: zuulexecutor.Namespace}, existingZuulExecutor)
-	if err != nil && errors.IsNotFound(err) {
-		reqLogger.Info("Creating ZuulExecutor")
-		if err = createK8sObject(instance, zuulexecutor, r); err != nil {
-			return reconcile.Result{}, err
+	for i, v := range existingzuulcomponents {
+		err = r.client.Get(context.TODO(), types.NamespacedName{Name: zuulcomponents[i].Name, Namespace: zuulcomponents[i].Namespace}, v)
+		if err != nil && errors.IsNotFound(err) {
+			reqLogger.Info("Creating Deployment: " + zuulcomponents[i].Name)
+			if err = createK8sObject(instance, zuulcomponents[i], r); err != nil {
+				return reconcile.Result{}, err
+			}
+			return requeAfter(5, nil)
 		}
-		return requeAfter(5, nil)
 	}
 
 	/*
@@ -292,4 +293,3 @@ func requeAfter(sec int, err error) (reconcile.Result, error) {
 	t := time.Duration(sec)
 	return reconcile.Result{RequeueAfter: time.Second * t}, err
 }
-

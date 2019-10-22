@@ -14,6 +14,8 @@ type Tools struct {
 	cr            *cachev1alpha1.Zuul
 	ZuulScheduler ZuulScheduler
 	ZuulExecutor  ZuulExecutor
+	ZuulMerger    ZuulMerger
+	ZuulWeb       ZuulWeb
 }
 
 func (t *Tools) init() {
@@ -21,6 +23,12 @@ func (t *Tools) init() {
 		cr: t.cr,
 	}
 	t.ZuulExecutor = ZuulExecutor{
+		cr: t.cr,
+	}
+	t.ZuulMerger = ZuulMerger{
+		cr: t.cr,
+	}
+	t.ZuulWeb = ZuulWeb{
 		cr: t.cr,
 	}
 }
@@ -34,6 +42,8 @@ func (t *Tools) SetupAccountsAndBindings() (*corev1.Namespace, *corev1.ServiceAc
 
 	t.ZuulScheduler.serviceAccount = svcAccount
 	t.ZuulExecutor.serviceAccount = svcAccount
+	t.ZuulMerger.serviceAccount = svcAccount
+	t.ZuulWeb.serviceAccount = svcAccount
 	return namespace, svcAccount, clusterRole, roleBinding
 }
 
@@ -45,6 +55,18 @@ type ZuulScheduler struct {
 
 // ZuulExecutor structure
 type ZuulExecutor struct {
+	cr             *cachev1alpha1.Zuul
+	serviceAccount *corev1.ServiceAccount
+}
+
+// ZuulMerger structure
+type ZuulMerger struct {
+	cr             *cachev1alpha1.Zuul
+	serviceAccount *corev1.ServiceAccount
+}
+
+// ZuulWeb structure
+type ZuulWeb struct {
 	cr             *cachev1alpha1.Zuul
 	serviceAccount *corev1.ServiceAccount
 }
@@ -67,6 +89,26 @@ func (z *ZuulExecutor) GetZuulExecutorConfigMap() (*corev1.ConfigMap, *corev1.Co
 // GetZuulExecutorDeployment returns ZuulExecutor Deployment
 func (z *ZuulExecutor) GetZuulExecutorDeployment() (*appsv1.Deployment, *appsv1.Deployment) {
 	return &appsv1.Deployment{}, zuul.CreateZuulExecutorDeployment(z.cr, z.serviceAccount)
+}
+
+// GetZuulMergerConfigMap returns ZuulMerger ConfigMap
+func (z *ZuulMerger) GetZuulMergerConfigMap() (*corev1.ConfigMap, *corev1.ConfigMap) {
+	return &corev1.ConfigMap{}, zuul.CreateZuulMergerConfigMap(z.cr)
+}
+
+// GetZuulMergerDeployment returns ZuulMerger Deployment
+func (z *ZuulMerger) GetZuulMergerDeployment() (*appsv1.Deployment, *appsv1.Deployment) {
+	return &appsv1.Deployment{}, zuul.CreateZuulMergerDeployment(z.cr, z.serviceAccount)
+}
+
+// GetZuulWebConfigMap returns ZuulWeb ConfigMap
+func (z *ZuulWeb) GetZuulWebConfigMap() (*corev1.ConfigMap, *corev1.ConfigMap) {
+	return &corev1.ConfigMap{}, zuul.CreateZuulWebConfigMap(z.cr)
+}
+
+// GetZuulWebDeployment returns ZuulWeb Deployment
+func (z *ZuulWeb) GetZuulWebDeployment() (*appsv1.Deployment, *appsv1.Deployment) {
+	return &appsv1.Deployment{}, zuul.CreateZuulWebDeployment(z.cr, z.serviceAccount)
 }
 
 /* -------------------------------
