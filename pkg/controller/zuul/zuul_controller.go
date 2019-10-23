@@ -92,7 +92,6 @@ type ReconcileZuul struct {
 // Reconcile reads that state of the cluster for a Zuul object and makes changes based on the state read
 // and what is in the Zuul.Spec
 // TODO(user): Modify this Reconcile function to implement your Controller logic.  This example creates
-// a Pod as an example
 // Note:
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
@@ -198,20 +197,23 @@ func (r *ReconcileZuul) Reconcile(request reconcile.Request) (reconcile.Result, 
 	gerrit_server := instance.Spec.Gerrit.Server
 	gerrit_port := instance.Spec.Gerrit.Port
 
-	env := existingZuulScheduler.Spec.Template.Spec.Containers[0].Env
-	env_map := generateEnvMap(env)
 
-	// If update gerrit message, we need recreate configmap and deployment
-	if ( env_map["gerrit_server"] != gerrit_server || env_map["gerrit_port"] != gerrit_port ) {
-		reqLogger.Info("Begin Delete ZuulScheduler Configmap")
-		if err = r.client.Delete(context.TODO(), existingZuulSchedulerConfigMap); err != nil {
-			return reconcile.Result{}, err
+	for i, v := range existingzuulcomponents {
+		env := v.Spec.Template.Spec.Containers[0].Env
+		env_map := generateEnvMap(env)
+
+		// If update gerrit message, we need recreate configmap and deployment
+		if ( env_map["gerrit_server"] != gerrit_server || env_map["gerrit_port"] != gerrit_port ) {
+			reqLogger.Info("Begin Delete Configmap: " + existingzuulcomponentsconfig[i].Name)
+			if err = r.client.Delete(context.TODO(), existingzuulcomponentsconfig[i]); err != nil {
+				return reconcile.Result{}, err
+			}
+			reqLogger.Info("Begin Delete Deployment: " + v.Name)
+			if err = r.client.Delete(context.TODO(), v); err != nil {
+				return reconcile.Result{}, err
+			}
+			return requeAfter(5, nil)
 		}
-		reqLogger.Info("Begin Delete ZuulScheduler Deployment")
-		if err = r.client.Delete(context.TODO(), existingZuulScheduler); err != nil {
-			return reconcile.Result{}, err
-		}
-		return requeAfter(5, nil)
 	}
 
 	// ZuulScheduler Deployment Size Update
@@ -226,16 +228,19 @@ func (r *ReconcileZuul) Reconcile(request reconcile.Request) (reconcile.Result, 
 
 	// Zuul Version update
 	version := instance.Spec.ZuulVersion
-	actual_zc_image_prefix, actual_zc_image_version := generateImageDetail(existingZuulScheduler)
 
-	if actual_zc_image_version != version {
-		expect_image := strings.Join([]string{actual_zc_image_prefix, version}, ":")
-		existingZuulScheduler.Spec.Template.Spec.Containers[0].Image = expect_image
+	for _, v := range existingzuulcomponents {
+		actual_zc_image_prefix, actual_zc_image_version := generateImageDetail(v)
 
-		if err = r.client.Update(context.TODO(), existingZuulScheduler); err != nil {
-			return reconcile.Result{}, err
+		if actual_zc_image_version != version {
+			expect_image := strings.Join([]string{actual_zc_image_prefix, version}, ":")
+			v.Spec.Template.Spec.Containers[0].Image = expect_image
+
+			if err = r.client.Update(context.TODO(), v); err != nil {
+				return reconcile.Result{}, err
+			}
+			return reconcile.Result{Requeue: true}, nil
 		}
-		return reconcile.Result{Requeue: true}, nil
 	}
 
 	return reconcile.Result{}, nil
