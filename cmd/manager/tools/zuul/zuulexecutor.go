@@ -78,6 +78,7 @@ func CreateZuulExecutorDeployment(cr *cachev1alpha1.Zuul, serviceAccount *corev1
 							Command: []string{"sleep", "1d"},
 							Env:          utils.GenerateEnvironmentVariables(cr),
 							VolumeMounts: generatezuulexecutorVolumeMounts(),
+							SecurityContext: &corev1.SecurityContext{RunAsUser: &zuul_user_id},
 						},
 					},
 					Volumes:            generatezuulexecutorVolumes(),

@@ -81,6 +81,11 @@ func (z *ZuulScheduler) GetZuulSchedulerDeployment() (*appsv1.Deployment, *appsv
 	return &appsv1.Deployment{}, zuul.CreateZuulSchedulerDeployment(z.cr, z.serviceAccount)
 }
 
+// GetGearmanService returns gearman service
+func (z *ZuulScheduler) GetGearmanService() (*corev1.Service, *corev1.Service) {
+	return &corev1.Service{}, zuul.CreateGearmanService(z.cr)
+}
+
 // GetZuulExecutorConfigMap returns ZuulExecutor ConfigMap
 func (z *ZuulExecutor) GetZuulExecutorConfigMap() (*corev1.ConfigMap, *corev1.ConfigMap) {
 	return &corev1.ConfigMap{}, zuul.CreateZuulExecutorConfigMap(z.cr)
@@ -109,6 +114,11 @@ func (z *ZuulWeb) GetZuulWebConfigMap() (*corev1.ConfigMap, *corev1.ConfigMap) {
 // GetZuulWebDeployment returns ZuulWeb Deployment
 func (z *ZuulWeb) GetZuulWebDeployment() (*appsv1.Deployment, *appsv1.Deployment) {
 	return &appsv1.Deployment{}, zuul.CreateZuulWebDeployment(z.cr, z.serviceAccount)
+}
+
+// GetZuulWebService returns zuul-web service
+func (z *ZuulWeb) GetZuulWebService() (*corev1.Service, *corev1.Service) {
+	return &corev1.Service{}, zuul.CreateZuulWebService(z.cr)
 }
 
 /* -------------------------------

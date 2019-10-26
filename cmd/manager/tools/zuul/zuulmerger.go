@@ -78,6 +78,7 @@ func CreateZuulMergerDeployment(cr *cachev1alpha1.Zuul, serviceAccount *corev1.S
 							Command: []string{"sleep", "1d"},
 							Env:          utils.GenerateEnvironmentVariables(cr),
 							VolumeMounts: generatezuulmergerVolumeMounts(),
+							SecurityContext: &corev1.SecurityContext{RunAsUser: &zuul_user_id},
 						},
 					},
 					Volumes:            generatezuulmergerVolumes(),

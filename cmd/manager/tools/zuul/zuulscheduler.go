@@ -6,6 +6,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 func generatezuulshedulerVolumeMounts() []corev1.VolumeMount {
@@ -84,12 +85,13 @@ func CreateZuulSchedulerDeployment(cr *cachev1alpha1.Zuul, serviceAccount *corev
 							Ports: []corev1.ContainerPort{
 								corev1.ContainerPort{
 									Name: "scheduler-port",
-									ContainerPort: 2020,
+									ContainerPort: 4730,
 								},
 							},
 							Command: []string{"sleep", "1d"},
 							Env:          utils.GenerateEnvironmentVariables(cr),
 							VolumeMounts: generatezuulshedulerVolumeMounts(),
+							SecurityContext: &corev1.SecurityContext{RunAsUser: &zuul_user_id},
 						},
 					},
 					Volumes:            generatezuulschedulerVolumes(),
@@ -128,6 +130,35 @@ func CreateZuulSchedulerConfigMap(cr *cachev1alpha1.Zuul) *corev1.ConfigMap {
 		Data: map[string]string{
 			"main.yaml": *mainyamlconfig,
 			"zuul.conf": *zuulconfig,
+		},
+	}
+}
+
+// CreategearmanService generates gearman service
+func CreateGearmanService(cr *cachev1alpha1.Zuul) *corev1.Service {
+	return &corev1.Service{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Service",
+			APIVersion: "v1",
+		},
+
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "gearman",
+			Namespace: cr.ObjectMeta.Namespace,
+		},
+
+		Spec: corev1.ServiceSpec{
+			Selector: map[string]string{
+				"k8s-app": "zuul-scheduler",
+			},
+			Ports: []corev1.ServicePort{
+				{
+					Port: 4730,
+					TargetPort: intstr.IntOrString{
+						IntVal: int32(4730),
+					},
+				},
+			},
 		},
 	}
 }

@@ -6,6 +6,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 func generatezuulwebVolumeMounts() []corev1.VolumeMount {
@@ -84,6 +85,7 @@ func CreateZuulWebDeployment(cr *cachev1alpha1.Zuul, serviceAccount *corev1.Serv
 							Command: []string{"sleep", "1d"},
 							Env:          utils.GenerateEnvironmentVariables(cr),
 							VolumeMounts: generatezuulwebVolumeMounts(),
+							SecurityContext: &corev1.SecurityContext{RunAsUser: &zuul_user_id},
 						},
 					},
 					Volumes:            generatezuulwebVolumes(),
@@ -121,3 +123,31 @@ func CreateZuulWebConfigMap(cr *cachev1alpha1.Zuul) *corev1.ConfigMap {
 	}
 }
 
+// CreatezuulwebService generates zuul-web service
+func CreateZuulWebService(cr *cachev1alpha1.Zuul) *corev1.Service {
+	return &corev1.Service{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Service",
+			APIVersion: "v1",
+		},
+
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "zuul-web",
+			Namespace: cr.ObjectMeta.Namespace,
+		},
+
+		Spec: corev1.ServiceSpec{
+			Selector: map[string]string{
+				"k8s-app": "zuul-web",
+			},
+			Ports: []corev1.ServicePort{
+				{
+					Port: 9001,
+					TargetPort: intstr.IntOrString{
+						IntVal: int32(9001),
+					},
+				},
+			},
+		},
+	}
+}

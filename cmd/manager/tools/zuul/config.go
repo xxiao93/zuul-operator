@@ -1,5 +1,7 @@
 package zuul
 
+var zuul_user_id int64 = 42488
+
 var mainyamlTemplate = `
 - tenant:
   name: es-tenant
@@ -80,7 +82,7 @@ var zuulschedulerconfigTemplate = `
 server=127.0.0.1
 port=4730
 [zookeeper]
-hosts=zookeeper-zookeeper:2181
+hosts=zookeeper.devops.svc.cluster.local:2181
 [gearman_server]
 start=true
 port=4730
@@ -95,6 +97,9 @@ baseurl=http://{{ .GerritServer }}:8080
 user={{ .GerritUser }}
 sshkey=/home/zuul/.ssh/id_rsa
 keepalive=5
+[connection mysql]
+driver=sql
+dburi=mysql+pymysql://zuul:zuul@mysql.devops.svc.cluster.local/zuul
 `
 
 var zuulexecutorconfigTemplate = `
@@ -146,4 +151,7 @@ static_path=/zuul/zuul/web/static
 [gearman]
 server=gearman
 port=4730
+[connection mysql]
+driver=sql
+dburi=mysql+pymysql://zuul:zuul@mysql.devops.svc.cluster.local/zuul
 `

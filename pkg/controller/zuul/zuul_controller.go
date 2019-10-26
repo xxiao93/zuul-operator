@@ -148,6 +148,27 @@ func (r *ReconcileZuul) Reconcile(request reconcile.Request) (reconcile.Result, 
 		return requeAfter(1, nil)
 	}
 
+	existingGearmanService, gearmanService := tool.ZuulScheduler.GetGearmanService()
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: gearmanService.Name, Namespace: gearmanService.Namespace}, existingGearmanService)
+	if err != nil && errors.IsNotFound(err) {
+		reqLogger.Info("Creating Gearman Service")
+		if err = createK8sObject(instance, gearmanService, r); err != nil {
+			return reconcile.Result{}, err
+		}
+		return requeAfter(1, nil)
+	}
+
+	existingZuulWebService, zuulwebService := tool.ZuulWeb.GetZuulWebService()
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: zuulwebService.Name, Namespace: zuulwebService.Namespace}, existingZuulWebService)
+	if err != nil && errors.IsNotFound(err) {
+		reqLogger.Info("Creating ZuulWeb Service")
+		if err = createK8sObject(instance, zuulwebService, r); err != nil {
+			return reconcile.Result{}, err
+		}
+		return requeAfter(1, nil)
+	}
+
+
 	// Create Zuul
 	existingZuulSchedulerConfigMap, zuulschedulerconfigMap := tool.ZuulScheduler.GetZuulSchedulerConfigMap()
 	existingZuulScheduler, zuulscheduler := tool.ZuulScheduler.GetZuulSchedulerDeployment()
