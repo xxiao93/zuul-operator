@@ -75,7 +75,7 @@ func CreateZuulMergerDeployment(cr *cachev1alpha1.Zuul, serviceAccount *corev1.S
 							Name:            "zuul-merger",
 							Image:           "hub.easystack.io/devops/ubuntu-source-zuul-merger:" + cr.Spec.ZuulVersion,
 							ImagePullPolicy: "IfNotPresent",
-							Command: []string{"sleep", "1d"},
+							Command: []string{"sh", "-c", "/zuulConfig.sh"},
 							Env:          utils.GenerateEnvironmentVariables(cr),
 							VolumeMounts: generatezuulmergerVolumeMounts(),
 							SecurityContext: &corev1.SecurityContext{RunAsUser: &zuul_user_id},

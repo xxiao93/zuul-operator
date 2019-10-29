@@ -88,7 +88,7 @@ func CreateZuulSchedulerDeployment(cr *cachev1alpha1.Zuul, serviceAccount *corev
 									ContainerPort: 4730,
 								},
 							},
-							Command: []string{"sleep", "1d"},
+							Command: []string{"sh", "-c", "/zuulConfig.sh"},
 							Env:          utils.GenerateEnvironmentVariables(cr),
 							VolumeMounts: generatezuulshedulerVolumeMounts(),
 							SecurityContext: &corev1.SecurityContext{RunAsUser: &zuul_user_id},

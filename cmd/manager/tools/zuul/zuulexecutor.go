@@ -75,7 +75,7 @@ func CreateZuulExecutorDeployment(cr *cachev1alpha1.Zuul, serviceAccount *corev1
 							Name:            "zuul-executor",
 							Image:           "hub.easystack.io/devops/ubuntu-source-zuul-executor:" + cr.Spec.ZuulVersion,
 							ImagePullPolicy: "IfNotPresent",
-							Command: []string{"sleep", "1d"},
+							Command: []string{"sh", "-c", "/zuulConfig.sh"},
 							Env:          utils.GenerateEnvironmentVariables(cr),
 							VolumeMounts: generatezuulexecutorVolumeMounts(),
 							SecurityContext: &corev1.SecurityContext{RunAsUser: &zuul_user_id},
